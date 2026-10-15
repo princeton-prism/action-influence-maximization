@@ -24,19 +24,52 @@ export const ALGORITHMS = [
       {number: 3, stage: 'density', text: 'Jointly train divergence heads for the three reward densities'},
       {number: 4, stage: 'density', text: 'Select checkpoint Mₖ using held-out likelihood; freeze it'},
       {number: 5, stage: 'annotation', text: 'Integrate flows and learned divergences to score all replay transitions'},
-      {number: 6, stage: 'annotation', text: 'mₖ = log q̂ₖ − log β̂ₖ'},
-      {number: 7, stage: 'annotation', text: 'cₖ = log d̂ₖ'},
-      {number: 8, stage: 'annotation', text: 'Standardize each term using refreshed global replay statistics:\nr̂ₖ = zₖ(mₖ) − zₖ(cₖ)'},
-      {number: 9, stage: 'annotation', text: 'Annotate Dₖ with r̂ₖ to obtain D̂ₖ, fixed for policy fitting'},
-      {number: 10, stage: 'annotation', text: 'return (Mₖ, D̂ₖ)'},
+      {number: 6, stage: 'annotation', text: 'mₖ = log q̂ₖ − log β̂ₖ, cₖ = log d̂ₖ'},
+      {number: 7, stage: 'annotation', text: 'Standardize each term using refreshed global replay statistics:\nr̂ₖ = zₖ(mₖ) − zₖ(cₖ)'},
+      {number: 8, stage: 'annotation', text: 'Annotate Dₖ with r̂ₖ to obtain D̂ₖ, fixed for policy fitting'},
+      {number: 9, stage: 'annotation', text: 'return (Mₖ, D̂ₖ)'},
     ],
   },
 ];
 
+const ALGORITHM_MATH = new Map([
+  ['k = 0, …, K − 1', String.raw`k = 0, \ldots, K - 1`],
+  ['(Mₖ, D̂ₖ) ← FitReward(Dₖ, Mₖ₋₁)',
+    String.raw`(M_k, \hat{D}_k) \leftarrow \operatorname{FitReward}(D_k, M_{k-1})`],
+  ['FitReward(Dₖ, Mₖ₋₁)', String.raw`\operatorname{FitReward}(D_k, M_{k-1})`],
+  ['Dₖ₊₁ ← Dₖ ∪ Tₖ', String.raw`D_{k+1} \leftarrow D_k \cup T_k`],
+  ['mₖ = log q̂ₖ − log β̂ₖ', String.raw`m_k = \log \hat{q}_k - \log \hat{\beta}_k`],
+  ['cₖ = log d̂ₖ', String.raw`c_k = \log \hat{d}_k`],
+  ['r̂ₖ = zₖ(mₖ) − zₖ(cₖ)', String.raw`\hat{r}_k = z_k(m_k) - z_k(c_k)`],
+  ['q̂ₖ, β̂ₖ, d̂ₖ', String.raw`\hat{q}_k, \hat{\beta}_k, \hat{d}_k`],
+  ['(Mₖ, D̂ₖ)', String.raw`(M_k, \hat{D}_k)`],
+  ['D₀', 'D_0'], ['M₋₁', 'M_{-1}'], ['K', 'K'], ['Bₖ', 'B_k'],
+  ['Dₖ', 'D_k'], ['Mₖ₋₁', 'M_{k-1}'], ['Mₖ', 'M_k'],
+  ['πₖ', String.raw`\pi_k`], ['D̂ₖ', String.raw`\hat{D}_k`],
+  ['Tₖ', 'T_k'], ['D_K', 'D_K'], ['r̂ₖ', String.raw`\hat{r}_k`],
+]);
+const MATH_PATTERN = new RegExp([...ALGORITHM_MATH.keys()]
+  .sort((a, b) => b.length - a.length)
+  .map((source) => source === 'K' ? String.raw`\bK\b` :
+    source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
+
+/** Split only the algorithm's known notation; retain the exact source wording. */
+export function splitAlgorithmMath(text) {
+  const parts = [];
+  let position = 0;
+  for (const match of text.matchAll(MATH_PATTERN)) {
+    if (match.index > position) parts.push({text: text.slice(position, match.index)});
+    parts.push({text: match[0], tex: ALGORITHM_MATH.get(match[0])});
+    position = match.index + match[0].length;
+  }
+  if (position < text.length) parts.push({text: text.slice(position)});
+  return parts;
+}
+
 export const STAGES = [
   {id: 'replay', label: 'Existing replay', symbol: 'Dₖ', algorithm: 1, line: 1},
   {id: 'density', label: 'Fit densities', symbol: 'q̂ₖ, β̂ₖ, d̂ₖ', algorithm: 2, line: 2},
-  {id: 'annotation', label: 'Score & annotate', symbol: 'r̂ₖ, D̂ₖ', algorithm: 2, line: 8},
+  {id: 'annotation', label: 'Score & annotate', symbol: 'r̂ₖ, D̂ₖ', algorithm: 2, line: 7},
   {id: 'collector', label: 'Fit collector', symbol: 'πₖ', algorithm: 1, line: 3},
   {id: 'collection', label: 'Collect rollouts', symbol: 'Tₖ', algorithm: 1, line: 5},
   {id: 'growth', label: 'Grow replay', symbol: 'Dₖ₊₁', algorithm: 1, line: 6},
@@ -72,8 +105,8 @@ export function snapshot(cursor) {
   const after = (algorithm, number) => cursor >= cursorForLine(algorithm, number);
   const state = {
     ...step, stage: line.stage, text: line.text,
-    frozen: after(2, 4), scored: after(2, 5), normalized: after(2, 8),
-    annotated: after(2, 9), criticReset: after(1, 3), collectorFit: after(1, 4),
+    frozen: after(2, 4), scored: after(2, 5), normalized: after(2, 7),
+    annotated: after(2, 8), criticReset: after(1, 3), collectorFit: after(1, 4),
     collected: after(1, 5), replayGrown: after(1, 6), done: after(1, 8),
   };
   state.variables = [
@@ -82,9 +115,9 @@ export function snapshot(cursor) {
     ['Checkpoint', state.frozen ? 'Mₖ frozen' : after(2, 2) ?
       'Fit q̂ₖ, β̂ₖ, d̂ₖ and behavior policy' : 'Prior Mₖ₋₁'],
     ['Reward', state.annotated ? 'r̂ₖ fixed during policy fitting' : state.normalized ?
-      'r̂ₖ = zₖ(mₖ) − zₖ(cₖ)' : after(2, 7) ?
-        'mₖ = log q̂ₖ − log β̂ₖ; cₖ = log d̂ₖ' : after(2, 6) ?
-          'mₖ = log q̂ₖ − log β̂ₖ' : state.scored ? 'Replay likelihoods scored' : 'Not scored'],
+      'r̂ₖ = zₖ(mₖ) − zₖ(cₖ)' : after(2, 6) ?
+        'mₖ = log q̂ₖ − log β̂ₖ, cₖ = log d̂ₖ' :
+        state.scored ? 'Replay likelihoods scored' : 'Not scored'],
     ['Collector', state.collectorFit ? 'πₖ fit: IQL / BC / AWR after critic warmup' :
       state.criticReset ? 'πₖ initialized; Q/V heads reset' : 'Not initialized'],
     ['New batch', state.collected ? 'Tₖ: recorded AIM examples' : 'Not collected'],

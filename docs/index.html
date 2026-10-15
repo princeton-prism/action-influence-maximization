@@ -6,17 +6,23 @@
   <title>AIM · An experiment in world-model data</title>
   <meta name="description" content="Choose world models, sample a shared PushT trajectory, and explore how data collection changes what a world model can predict.">
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css">
-  <script type="module" src="app.mjs"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+  <link rel="stylesheet" href="style.css?v=a59e65290835">
+  <script defer data-math-renderer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+  <script type="module" src="math-rendering.mjs"></script>
+  <script type="module" src="app.mjs?v=81913d91c669"></script>
   <script type="module" src="figure-playback.mjs"></script>
+  <script type="module" src="citation-copy.mjs"></script>
   <script type="module" src="./static/js/charts.js"></script>
 </head>
 <body>
+  <nav class="page-navigation" aria-label="Page navigation">
+    <a href="#experiment">Experiment Sandbox</a>
+  </nav>
   <main>
     <header class="masthead">
       <h1>Training controllable world models<br> via <em>Action Influence Maximization</em></h1>
-      <p class="standfirst">Our hypothesis: world model controllability is a property of the action information in the data.<br class="desktop-break"> AIM is a data-collection method for improving action information to improve world models.</p>
-      <p class="authors">Samuel M. Bateman<sup>†</sup> · Tenny Yin<sup>†</sup> · Chongyi Zheng<sup>†</sup> · Lei Huang<sup>‡</sup> · Brian Wang<sup>†</sup><br>Benjamin Eysenbach<sup>†</sup> · Jaime Fernández Fisac<sup>†</sup> · Dhruv Shah<sup>†</sup></p>
+      <p class="authors"><span>Samuel M. Bateman<sup>†</sup></span> · <span>Tenny Yin<sup>†</sup></span> · <span>Chongyi Zheng<sup>†</sup></span> · <span>Lei Huang<sup>‡</sup></span> · <span>Brian Wang<sup>†</sup></span><br><span>Benjamin Eysenbach<sup>†</sup></span> · <span>Jaime Fernández Fisac<sup>†</sup></span> · <span>Dhruv Shah<sup>†</sup></span></p>
       <p class="affiliation"><sup>†</sup> Princeton University &amp; <sup>‡</sup> Columbia University</p>
       <nav class="paper-resources" aria-label="Paper resources"><span class="paper-venue">CoRL 2026</span><a href="./" target="_blank" rel="noopener">ArXiv</a><a href="https://github.com/princeton-prism/action-influence-maximization" target="_blank" rel="noopener">Code</a><a href="#bibtex">Cite</a></nav>
     </header>
@@ -24,98 +30,6 @@
     <section class="paper-abstract" id="abstract" aria-labelledby="abstract-title">
       <h2 id="abstract-title">Abstract</h2>
       <p>Action-conditioned video generative models trained on successful, goal-directed demonstrations tend to ignore the commanded action, rendering a plausible expert-like future regardless of what is asked of them. We trace this failure to training data that lack sufficient action influence. We analyze this metric and prove that it upper bounds the action influence that any model trained on that data can express. Expert demonstrations, whose narrow action distributions let next states be predicted without attending to the action, set a low ceiling that no amount of model capacity alone can raise. Raising it requires collecting different data. We introduce Action Influence Maximization (AIM), an algorithm for actively collecting training data for improving dataset action influence. We compare the performance and data-efficiency of AIM against exploration heuristics and intrinsic-motivation methods on simulated navigation and manipulation tasks. In pixel-based manipulation, AIM is the only method that consistently improves controllability: 500 actively collected episodes added to 3k demonstrations match a world model trained on 300k expert episodes on end-effector controllability, an 85× reduction in data.</p>
-    </section>
-
-    <section class="experiment" id="experiment" aria-labelledby="experiment-title">
-      <div class="section-heading">
-        <div><h2 class="sandbox-title" id="experiment-title">How does data collection shape world model controllability? <span>An Experimental Sandbox</span></h2></div>
-      </div>
-
-      <div class="hypotheses" aria-label="Suggested experiments">
-        <span>Example experiments:</span>
-        <button class="hypothesis active" data-preset="scale">Can better data beat more data?</button>
-        <button class="hypothesis" data-preset="collection">Does active collection help?</button>
-        <button class="hypothesis" data-preset="ablation">What does AIM add?</button>
-      </div>
-      <p class="question-description" id="question-description">Choose a question to set up a comparison, or pick your own models below.</p>
-
-      <div class="experiment-window">
-      <div class="bench" id="experiment-rendering" role="group" aria-label="Experiment rendering" data-state="loading">
-        <div class="rollout-area">
-
-          <div class="mobile-model-tabs" role="group" aria-label="Displayed rollout">
-            <button data-view="gt">Ground truth</button><button class="active" data-view="a">Model A</button><button data-view="b">Model B</button>
-          </div>
-          <div class="video-grid" data-mobile-view="a">
-            <figure class="video-panel" data-view="gt">
-              <figcaption><span class="panel-tag tag-gt">GT</span><span>Recorded simulation</span></figcaption>
-              <div class="viewfinder"><video id="video-gt" muted playsinline preload="auto" aria-label="Ground-truth simulator rollout"></video><span class="viewfinder-label">Simulator</span></div>
-              <p class="panel-note">The actual outcome of these actions. Both models start from the same recorded history.</p>
-            </figure>
-            <figure class="video-panel model-a" data-view="a">
-              <figcaption><span class="panel-tag">A</span><span id="label-a">Model A</span></figcaption>
-              <div class="viewfinder"><video id="video-a" muted playsinline preload="auto" aria-label="Model A prediction"></video><span class="viewfinder-label" id="seed-a">Prediction</span></div>
-              <p class="panel-note" id="note-a">The model's predicted consequence</p>
-            </figure>
-            <figure class="video-panel model-b" data-view="b">
-              <figcaption><span class="panel-tag">B</span><span id="label-b">Model B</span></figcaption>
-              <div class="viewfinder"><video id="video-b" muted playsinline preload="auto" aria-label="Model B prediction"></video><span class="viewfinder-label" id="seed-b">Prediction</span></div>
-              <p class="panel-note" id="note-b">Same actions. Different training data.</p>
-            </figure>
-          </div>
-          <div class="timeline">
-            <button class="play-button" id="play" aria-label="Pause playback" disabled>Ⅱ</button>
-            <input type="range" id="scrubber" min="0" max="32" value="0" step="1" aria-label="Rollout frame" disabled>
-            <output class="frame-label" id="frame-label">01 / 33</output>
-            <select class="speed-select" id="speed" aria-label="Playback speed"><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
-          </div>
-
-        </div>
-
-        <aside class="evidence" aria-label="Recall plot">
-          <h3>Controllability Performance</h3>
-          <div class="metric-tabs" role="group" aria-label="Recall metric"><button class="active" data-metric="ee" aria-pressed="true">Robot</button><button data-metric="tee" aria-pressed="false">Object</button><button data-metric="joint" aria-pressed="false">Both</button></div>
-          <p class="current-frame-note">Current frame · pixel recall</p>
-          <div class="current-recall"><div class="model-a"><span>A <span id="score-label-a">Model A</span></span><strong id="recall-a">—</strong></div><div class="model-b"><span>B <span id="score-label-b">Model B</span></span><strong id="recall-b">—</strong></div></div>
-          <svg class="recall-chart" id="recall-chart" viewBox="0 0 360 220" role="img" aria-label="Per-frame recall for both selected models"></svg>
-          <div class="plot-legend"><span class="model-a"><i class="color-dot" aria-hidden="true"></i> Model A</span><span class="model-b"><i class="color-dot" aria-hidden="true"></i> Model B</span><span>Higher is better</span></div>
-
-        </aside>
-      </div>
-      <div class="experiment-state" id="experiment-state" hidden>
-        <div class="experiment-state-panel">
-          <div class="experiment-state-heading" role="status"><span class="experiment-spinner" aria-hidden="true" hidden></span><span><span id="experiment-state-title">Preparing experiment</span><span class="loading-dots" aria-hidden="true" hidden><span>.</span><span>.</span><span>.</span></span></span></div>
-          <p id="experiment-state-description" hidden></p>
-          <div id="experiment-progress-group" hidden><progress id="experiment-progress" max="4" value="0" aria-label="Experiment assets ready"></progress><p id="experiment-progress-description">Sampling a paired trajectory…</p></div>
-          <button id="experiment-state-action" type="button" hidden>Deploy Models</button>
-        </div>
-      </div>
-      </div>
-      <p class="metric-definition" id="metric-definition">Robot recall is the percentage of ground-truth robot pixels reproduced within the evaluator's RGB-error threshold. Higher is better.</p>
-      <div class="experiment-setup">
-        <div class="configuration">
-          <form class="experiment-controls" id="experiment-form">
-            <label class="model-field model-a"><span><i class="color-dot" aria-hidden="true"></i> World Model Training Distribution A</span><select id="model-a" aria-label="World Model Training Distribution A" disabled></select></label>
-            <span class="versus" aria-hidden="true">vs.</span>
-            <label class="model-field model-b"><span><i class="color-dot" aria-hidden="true"></i> World Model Training Distribution B</span><select id="model-b" aria-label="World Model Training Distribution B" disabled></select></label>
-            <div class="run-field"><button class="run-button" id="run" type="submit" disabled><span aria-hidden="true">⚄</span> <span id="run-label">Deploy Models</span> <span aria-hidden="true">↗</span></button></div>
-          </form>
-          <div class="distribution-row">
-            <span class="control-label">Learner Policy Distribution:</span>
-            <div class="distribution-tabs" id="distributions" role="group" aria-label="Evaluation distribution"></div>
-            <p class="distribution-description" id="distribution-description" aria-live="polite"></p>
-          </div>
-        </div>
-        <section class="leaderboard" id="leaderboard" aria-labelledby="leaderboard-title">
-          <h4 id="leaderboard-title">Your experiments so far</h4>
-          <p class="leaderboard-description" id="leaderboard-description"></p>
-          <div id="leaderboard-rows" aria-live="polite"></div>
-          <p class="leaderboard-note" id="leaderboard-note" hidden>Sampled windows, not the full evaluation.</p>
-          <a class="inline-experiment" href="#notebook">View your experiments</a>
-        </section>
-      </div>
-      <p class="error-message" id="error" role="alert" hidden></p>
-      <details class="experiment-details"><summary>How this experiment works <span aria-hidden="true">+</span></summary><div><p>Deploy Models and Run Rollouts sample precomputed results, not live training or inference. The two models receive the same recorded actions and start from the same ground-truth history. We sample a shared evaluation window and a recorded seed-1 prediction for each model. Playback loops; only a completed experiment adds a result to your notebook.</p><p>Pixel recall measures the percentage of ground-truth robot or object pixels reproduced within a mean absolute RGB error of 0.098. Both takes the lower robot/object recall at each frame where both are valid. The large numbers show the current frame; the curves show the window; your notebook averages valid frames. This acts as a proxy for task relevant controllability and fidelity.</p></div></details>
     </section>
 
     <article class="story" id="story">
@@ -126,7 +40,7 @@
       </header>
 
       <section class="story-section" id="problem">
-        <div class="margin-note"><span>1</span><p>Problem</p>Paper §1</div>
+        <div class="margin-note"><span>1</span><p>Problem</p></div>
         <div class="story-copy">
           <h2>World models lack useful controllability.</h2>
           <p data-author-copy="opening">In the last couple years, world models (predictive models of the future based on one's actions) have gone from "<a href="https://arxiv.org/abs/1912.01603" target="_blank" rel="noopener">showing signs of life on domain-specific problems</a>" to "<a href="https://openai.com/index/video-generation-models-as-world-simulators/" target="_blank" rel="noopener">possibly simulates physics flawlessly.</a>"</p>
@@ -137,11 +51,11 @@
         <figure class="story-figure" id="command-figure">
           <div class="figure-heading"><h3>Figure 1 · Following the commands—or the expert?</h3></div>
           <div class="figure-video-grid">
-            <figure><figcaption>Simulator</figcaption><video src="./static/videos/hand-motion-03-simulator-gt-rollout.mp4" width="256" height="256" muted playsinline preload="auto" aria-label="Figure 1 simulator ground truth"></video></figure>
-            <figure><figcaption>PPO expert 3K</figcaption><video src="./static/videos/hand-motion-03-ppo1-rollout.mp4" width="256" height="256" muted playsinline preload="auto" aria-label="Figure 1 PPO expert 3K prediction"></video></figure>
-            <figure><figcaption>Recovery 3K + 500 AIM (transfer)</figcaption><video src="./static/videos/hand-motion-03-recovery1-transferred-aim500-rollout.mp4" width="256" height="256" muted playsinline preload="auto" aria-label="Figure 1 Recovery 3K plus transferred AIM prediction"></video></figure>
+            <figure><figcaption>Simulator</figcaption><video src="./static/videos/hand-motion-03-simulator-gt-rollout.mp4" poster="./static/images/figures/hand-motion-03-simulator-gt-rollout.png" width="256" height="256" muted playsinline preload="metadata" aria-label="Figure 1 simulator ground truth"></video></figure>
+            <figure><figcaption>Expert Demos 3K</figcaption><video src="./static/videos/hand-motion-03-ppo1-rollout.mp4" poster="./static/images/figures/hand-motion-03-ppo1-rollout.png" width="256" height="256" muted playsinline preload="metadata" aria-label="Figure 1 Expert Demos 3K prediction"></video></figure>
+            <figure><figcaption>Recovery Demos 3K + 500 AIM (Transfer)</figcaption><video src="./static/videos/hand-motion-03-recovery1-transferred-aim500-rollout.mp4" poster="./static/images/figures/hand-motion-03-recovery1-transferred-aim500-rollout.png" width="256" height="256" muted playsinline preload="metadata" aria-label="Figure 1 Recovery Demos 3K plus transferred AIM prediction"></video></figure>
           </div>
-          <div class="figure-timeline"><button class="figure-play" type="button" aria-label="Play Figure 1" disabled>Play</button><input type="range" min="0" max="32" value="0" step="1" aria-label="Figure 1 frame" disabled></div>
+          <div class="figure-timeline"><button class="figure-play" type="button" aria-label="Play Figure 1">Play</button><input type="range" min="0" max="32" value="0" step="1" aria-label="Figure 1 frame" disabled></div>
           <figcaption>The same recorded commands, shown in simulation and two world-model predictions. This selected example compares different starting datasets as well as the AIM addition; it is not a matched-prior ablation. The AIM trajectories were reused from PPO-prior collection.</figcaption>
         </figure>
         <div class="story-copy story-followup influence-discussion">
@@ -156,7 +70,7 @@
       </section>
 
       <section class="story-section" id="framing">
-        <div class="margin-note"><span>2</span><p>Framing</p>Paper §5.2</div>
+        <div class="margin-note"><span>2</span><p>Framing</p></div>
         <div class="story-copy" id="passive-scaling">
           <h2 data-author-copy="dataHeading">What properties of data influence downstream world model controllability?</h2>
           <p data-author-copy="coverage">The deficiency of expert demonstration and non-active data collection has a pretty simple explanation: expert demonstrations in high-dimensional action spaces (e.g. human teleoperation) are efficient with their actions and tend to solve the same task in similar ways each time.</p>
@@ -175,30 +89,18 @@
         </figure>
         <div class="story-copy story-followup">
           <p data-author-copy="utility">Some form of action collection is critical, but what determines utility? We show in our work that a learned model is bound in what action consequences it can explain by the mutual information of its dataset. If the model is good at extracting information from a dataset, then we can ignore it entirely and optimize the dataset directly, independent of any specific model.</p>
-          <details class="technical-detail" id="action-information"><summary>The action-information bound</summary><div>
-            <p>Explained action information compares the model's action-conditioned prediction with its prediction averaged over possible actions. On real transitions drawn from one fixed state distribution ρ, action policy π, and transition kernel:</p>
-            <p class="technical-equation">p̂<sub>θ,π</sub>(s′ | s) = ∫ π(a | s) p̂<sub>θ</sub>(s′ | s,a) da</p>
-            <p class="technical-equation">Ĉ<sub>ρ</sub>(π) = E<sub>ρπp</sub> [log p̂<sub>θ</sub>(S′ | S,A) − log p̂<sub>θ,π</sub>(S′ | S)] ≤ I(A; S′ | S)</p>
-            <p>With finite expected KL terms, the gap is the expected KL divergence between real and model-induced inverse-action posteriors. The learned score can be negative. Theorem 1 compares quantities on the <em>same distribution</em>; it is not a universal ceiling on test-time extrapolation or a claim that pretraining cannot help. Pixel recall in the videos is not an estimate of this information quantity. See Appendix A.1.</p>
-          </div></details>
         </div>
       </section>
 
       <section class="story-section" id="acquisition">
-        <div class="margin-note"><span>3</span><p>Solution</p>Paper §§3–4</div>
+        <div class="margin-note"><span>3</span><p>Solution</p></div>
         <div class="story-copy">
           <h2 data-author-copy="methodHeading">Optimize the data, not the world model</h2>
           <p data-author-copy="reward">With this insight, that dataset mutual information relates to the best controllability a model can produce, we do a bit of analysis to derive a reward function to directly optimize this quantity in an ideal contextual bandits setting:</p>
-          <p class="aim-reward">r<sub>AIM</sub><sup>k</sup> = log q<sub>k</sub>(a | s,s′) − log β<sub>k</sub>(a | s) + log ρ<sub>eval</sub>(s) − log d<sub>k</sub>(s)</p>
+          <p class="aim-reward" data-tex="r_{\mathrm{AIM}}^k = {\log q_k(a \mid s,s')} - {\log \beta_k(a \mid s)} + {\log \rho_{\mathrm{eval}}(s)} - {\log d_k(s)}">r<sub>AIM</sub><sup>k</sup> = log q<sub>k</sub>(a | s,s′) − log β<sub>k</sub>(a | s) + log ρ<sub>eval</sub>(s) − log d<sub>k</sub>(s)</p>
           <p data-author-copy="interpretation">Excitingly, if our practical implementation is similar enough to the ideal contextual bandits problem this is derived from, optimizing this reward has higher mutual information than the previously collected data, and thus a higher upper bound on world model explainable action information. Full mathematical details are in the paper.</p>
           <p data-author-copy="interpretation">This reward popping out is pretty neat: if ρ<sub>eval</sub> is uniform, then this looks like a classic <a href="https://sites.google.com/view/diayn" target="_blank" rel="noopener">mutual information reward</a> and <a href="https://openai.com/index/reinforcement-learning-with-prediction-based-rewards/" target="_blank" rel="noopener">state coverage curiosity reward</a>.</p>
           <p data-author-copy="estimation">We estimate these learned reward functions with any prior collected data with <a href="https://arxiv.org/abs/1810.01367" target="_blank" rel="noopener">flow matching likelihood estimation</a> and <a href="https://kellyyutonghe.github.io/f2d2/" target="_blank" rel="noopener">self distillation</a>. These allow us to train RL policies to focus collection of a batch of data on the highest information utility samples, which we can add back into our dataset for the next round of reward estimation and collection.</p>
-          <details class="technical-detail"><summary>The reward and practical optimizer</summary><div>
-            <p>AIM estimates inverse dynamics q<sub>k</sub>(a | s,s′), an action prior β<sub>k</sub>(a | s), and state density d<sub>k</sub>(s). Its reward is:</p>
-            <p class="technical-equation">r<sub>AIM</sub><sup>k</sup> = log q<sub>k</sub>(a | s,s′) − log β<sub>k</sub>(a | s) + log ρ<sub>eval</sub>(s) − log d<sub>k</sub>(s)</p>
-            <p>The practical state reference is uniform over a bounded workspace, making the state term a novelty reward. Flow-based density models and amortized divergence heads score replay transitions. We standardize the two terms separately and fit an IQL critic and advantage-weighted flow-policy actor.</p>
-            <p>With exact replay densities and unit policy-KL penalty, the contextual optimizer tilts β toward high expected reward. Its guarantee requires the theorem's support and finiteness assumptions. The state-only term cancels when normalizing actions at a fixed state; it affects visitation in the sequential RL approximation. Practical learned rewards and sequential updates do not inherit the exact contextual guarantee. Reward estimates stay fixed within a policy-fitting round and are refreshed between rounds.</p>
-          </div></details>
         </div>
         <figure class="story-figure algorithm-walkthrough" id="algorithm-walkthrough">
           <div class="figure-heading"><h3>Walk through one AIM collection round</h3></div>
@@ -208,37 +110,37 @@
               <div class="cycle-diagram" role="group" aria-label="AIM collection cycle">
                 <svg class="cycle-arrows" viewBox="0 0 1000 850" preserveAspectRatio="none" aria-hidden="true">
                   <defs><marker id="cycle-arrow" markerWidth="4" markerHeight="4" refX="4" refY="2" orient="auto"><path d="M0 0L4 2L0 4Z"/></marker></defs>
-                  <path data-flow-stages="density" d="M400 220C450 115 510 115 570 200" data-mobile-path="M420 215C450 100 475 100 500 180"/>
-                  <path data-flow-stages="annotation collector" d="M835 290C980 365 980 495 835 565" data-mobile-path="M850 260C1025 340 1025 495 850 570"/>
-                  <path data-flow-stages="collection" d="M660 650C565 785 490 765 455 615" data-mobile-path="M680 665C565 795 515 775 485 650"/>
-                  <path data-flow-stages="growth" d="M205 565C45 545 45 340 205 270" data-mobile-path="M140 580C-20 555 -20 310 140 250"/>
+                  <path data-flow-stages="density" d="M400 176.902A420 240 0 0 1 600 176.902" data-mobile-path="M440 172.05A460 240 0 0 1 560 172.05"/>
+                  <path data-flow-stages="annotation collector" d="M863.731 290A420 240 0 0 1 863.731 530" data-mobile-path="M898.372 290A460 240 0 0 1 898.372 530"/>
+                  <path data-flow-stages="collection" d="M600 643.098A420 240 0 0 1 400 643.098" data-mobile-path="M560 647.95A460 240 0 0 1 440 647.95"/>
+                  <path data-flow-stages="growth" d="M136.269 530A420 240 0 0 1 136.269 290" data-mobile-path="M101.628 530A460 240 0 0 1 101.628 290"/>
                 </svg>
                 <button class="cycle-station cycle-replay" type="button" data-stage-jump="replay">
                   <span class="cycle-label">Expert demo dataset</span>
                   <span class="cycle-frame-stack"><img src="./static/images/teaser/gen_gt.png" alt="" width="144" height="144"><img src="./static/images/teaser/gen_gt.png" alt="" width="144" height="144"><img src="./static/images/teaser/gen_gt.png" alt="Illustrative PushT dataset frame" width="144" height="144"></span>
-                  <span class="cycle-symbol">D<sub>k</sub></span>
+                  <span class="cycle-symbol" data-tex="D_k">D<sub>k</sub></span>
                 </button>
                 <button class="cycle-station cycle-density" type="button" data-stage-jump="density">
                   <span class="cycle-label">Train reward density models</span>
                   <span class="cycle-detail">FFJORD + likelihood distillation</span>
-                  <span class="cycle-densities"><span>β̂<sub>k</sub>(a | s) &nbsp; d̂<sub>k</sub>(s)</span><span>q̂<sub>k</sub>(a | s,s′)</span></span>
+                  <span class="cycle-densities"><span data-tex="\hat{\beta}_k(a \mid s) \quad \hat{d}_k(s)">β̂<sub>k</sub>(a | s) &nbsp; d̂<sub>k</sub>(s)</span><span data-tex="\hat{q}_k(a \mid s,s')">q̂<sub>k</sub>(a | s,s′)</span></span>
                 </button>
                 <span class="cycle-edge-label cycle-summary">Summarize data<br>distribution</span>
                 <button class="cycle-transition cycle-annotation" type="button" data-stage-jump="annotation"><span class="cycle-label">Annotate<br>trajectories</span></button>
                 <button class="cycle-station cycle-collector" type="button" data-stage-jump="collector">
-                  <span class="cycle-symbol">π<sub>k</sub>(a | s)</span>
+                  <span class="cycle-symbol" data-tex="\pi_k(a \mid s)">π<sub>k</sub>(a | s)</span>
                   <span class="cycle-detail">IQL · BC · AWR</span>
                   <span class="cycle-label">Train exploration policy<br>to maximize AIM reward</span>
                 </button>
-                <span class="cycle-edge-label cycle-deploy">Deploy on robot</span>
-                <div class="cycle-collection">
-                  <div class="cycle-frame-stack"><img src="./static/images/figures/aim-collection-poster.png" alt="" width="512" height="512"><img src="./static/images/figures/aim-collection-poster.png" alt="" width="512" height="512"><div class="collection-examples"><video width="512" height="512" poster="./static/images/figures/aim-collection-poster.png" muted playsinline loop preload="metadata" aria-label="Recorded AIM environment collection"></video></div></div>
-                  <button class="cycle-station" type="button" data-stage-jump="collection"><span class="cycle-label">Collect new environment rollouts</span><span class="cycle-symbol">T<sub>k</sub> ∼ π<sub>k</sub>(a | s)</span></button>
-                </div>
+                <span class="cycle-edge-label cycle-deploy">Deploy on<br>robot</span>
+                <button class="cycle-station cycle-collection" type="button" data-stage-jump="collection">
+                  <span class="cycle-frame-stack"><img src="./static/images/figures/aim-collection-poster.png" alt="" width="512" height="512"><img src="./static/images/figures/aim-collection-poster.png" alt="" width="512" height="512"><span class="collection-examples"><video width="512" height="512" poster="./static/images/figures/aim-collection-poster.png" muted playsinline preload="metadata" aria-label="Recorded AIM environment collection"></video></span></span>
+                  <span class="cycle-label">Collect new environment rollouts</span><span class="cycle-symbol" data-tex="T_k \sim \pi_k(a \mid s)">T<sub>k</sub> ∼ π<sub>k</sub>(a | s)</span>
+                </button>
                 <button class="cycle-transition cycle-growth" type="button" data-stage-jump="growth"><span class="cycle-label">Add to<br>dataset</span></button>
               </div>
               <p class="collection-error" role="alert" hidden></p>
-              <div class="cycle-footer"><p class="cycle-repeat">Repeat with the enlarged replay when more rounds remain.</p><button class="downstream-step" type="button" data-stage-jump="training"><span class="cycle-label">Train world model</span><span class="cycle-symbol">D_K</span></button></div>
+              <div class="cycle-footer"><p class="cycle-repeat">Repeat with the enlarged replay when more rounds remain.</p><button class="downstream-step" type="button" data-stage-jump="training"><span class="cycle-label">Train world model</span><span class="cycle-symbol" data-tex="D_K">D_K</span></button></div>
             </div>
             <div class="walkthrough-controls" role="group" aria-label="Algorithm stepping"><button type="button" data-step-action="previous">Previous</button><button type="button" data-step-action="next">Next line →</button><button type="button" data-step-action="reset">Reset</button><output class="walkthrough-location" aria-live="polite"></output></div>
             <div class="algorithm-code">
@@ -247,13 +149,12 @@
               <section class="algorithm-panel" data-algorithm="2" aria-label="Reward fitting and annotation" hidden><h4></h4><p class="algorithm-requires"></p><p class="algorithm-declaration"></p><ol></ol></section>
             </div>
           </div>
-          <details class="technical-detail"><summary>Symbolic walkthrough state</summary><dl class="walkthrough-variables"></dl></details>
           <figcaption>Symbolic steps with recorded AIM environment footage from different collections; no live fitting or collection. Algorithm 2 standardizes the reward terms, distinct from the contextual formula above. The final replay is returned for downstream world-model training.</figcaption>
         </figure>
       </section>
 
       <section class="story-section" id="results">
-        <div class="margin-note"><span>4</span><p>Results</p>Paper results</div>
+        <div class="margin-note"><span>4</span><p>Results</p></div>
         <div class="story-copy" id="active-collection">
           <h2 data-author-copy="resultsHeading">The Promising Power of Small Data</h2>
           <p data-author-copy="smallData">We test different data collection controllability with two downstream learner policies: a Push-T behavior cloning (BC) policy, and a Push-Away policy that moves the Tee away from the goal. Starting with roughly 3,000 expert trajectories, we give collectors five 100-episode rounds in Push-T, and compare AIM with expert, random, recovery, and intrinsic exploration-based collection. On the original short-horizon PushT BC test, 500 AIM trajectories match the 300,000-expert model on end-effector recall: roughly <strong>85× fewer training episodes</strong> in total. On push-away, AIM approaches the performance of the 19k-expert. Both show significant data scaling efficiency improvements over alternate data collection efforts in high-dimensional manipulation:</p>
@@ -273,12 +174,113 @@
             <div class="preference-rows"></div>
             <div class="preference-axis"><span></span><div><span>0</span><span>Arena score</span><span>1800</span></div><span></span></div>
           </div>
-          <details class="technical-detail"><summary>Score values and reported intervals</summary><div><table class="preference-table"><thead><tr><th scope="col">Training data</th><th scope="col">Arena score ± reported interval</th></tr></thead><tbody></tbody></table></div></details>
           <figcaption>Human comparisons judge how faithfully predictions reproduce the simulator's robot behavior. Higher Arena scores indicate stronger preference within the selected distribution; whiskers show the reported Table 1 intervals. Scores are relative, not ratio-valued or comparable across distributions. These aggregate results are separate from pixel recall and your sampled notebook. Source: Table 1</figcaption>
         </figure>
       </section>
 
     </article>
+
+    <section class="experiment" id="experiment" aria-labelledby="experiment-title">
+      <div class="section-heading">
+        <div><h2 class="sandbox-title" id="experiment-title">Interactive Experimental Sandbox <span>Experiment with Data Mixtures</span></h2></div>
+      </div>
+
+      <div class="hypotheses" aria-label="Suggested experiments">
+        <span>Example experiments:</span>
+        <button class="hypothesis active" data-preset="scale">Can better data beat more data?</button>
+        <button class="hypothesis" data-preset="collection">Does active collection help?</button>
+        <button class="hypothesis" data-preset="ablation">What does AIM add?</button>
+      </div>
+      <p class="question-description" id="question-description">Choose a question to set up a comparison, or pick your own models below.</p>
+
+      <div class="experiment-window">
+      <div class="bench" id="experiment-rendering" role="group" aria-label="Experiment rendering" data-state="loading">
+        <div class="rollout-area">
+
+          <div class="mobile-model-tabs" role="group" aria-label="Displayed rollout">
+            <button data-view="gt">Ground truth</button><button class="active" data-view="a">Model A</button><button data-view="b">Model B</button>
+          </div>
+          <div class="video-grid" data-mobile-view="a">
+            <figure class="video-panel" data-view="gt">
+              <figcaption><span class="panel-tag tag-gt">GT</span><span>Recorded Simulation</span></figcaption>
+              <div class="viewfinder"><video id="video-gt" muted playsinline preload="auto" aria-label="Ground-truth simulator rollout"></video><span class="viewfinder-label">Simulator</span></div>
+              <p class="panel-note">The actual outcome of these actions. Both models start from the same recorded history.</p>
+            </figure>
+            <figure class="video-panel model-a" data-view="a">
+              <figcaption><span class="panel-tag">A</span><span id="label-a">Model A</span></figcaption>
+              <div class="viewfinder"><video id="video-a" muted playsinline preload="auto" aria-label="Model A prediction"></video><span class="viewfinder-label" id="seed-a">Prediction</span></div>
+              <p class="panel-note" id="note-a">The model's predicted consequence</p>
+            </figure>
+            <figure class="video-panel model-b" data-view="b">
+              <figcaption><span class="panel-tag">B</span><span id="label-b">Model B</span></figcaption>
+              <div class="viewfinder"><video id="video-b" muted playsinline preload="auto" aria-label="Model B prediction"></video><span class="viewfinder-label" id="seed-b">Prediction</span></div>
+              <p class="panel-note" id="note-b">Same actions. Different training data.</p>
+            </figure>
+          </div>
+          <div class="timeline">
+            <button class="play-button" id="play" aria-label="Pause playback" disabled>Ⅱ</button>
+            <input type="range" id="scrubber" min="0" max="32" value="0" step="1" aria-label="Rollout frame" disabled>
+            <output class="frame-label" id="frame-label">01 / 33</output>
+            <select class="speed-select" id="speed" aria-label="Playback speed"><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+            <div class="action-input" id="action-input" title="Recorded model-conditioning XY deltas. Shared by all three videos. Fixed linear radius: 50 mm; +X right, +Y up. Larger inputs are marked at the rim; numbers remain exact.">
+              <span class="input-caption">Action · mm</span>
+              <svg viewBox="0 0 100 100" width="64" height="64" role="img" aria-label="Recorded action unavailable">
+                <circle class="input-boundary" cx="50" cy="50" r="36"></circle>
+                <path class="input-axes" d="M14 50H86 M50 14V86"></path>
+                <text x="89" y="53">+x</text><text x="45" y="10">+y</text>
+                <g class="input-trail"></g>
+              </svg>
+              <output>Unavailable</output>
+            </div>
+          </div>
+
+        </div>
+
+        <aside class="evidence" aria-label="Recall plot">
+          <h3>Controllability Performance</h3>
+          <div class="metric-tabs" role="group" aria-label="Recall metric"><button class="active" data-metric="ee" aria-pressed="true">Robot</button><button data-metric="tee" aria-pressed="false">Object</button><button data-metric="joint" aria-pressed="false">Both</button></div>
+          <p class="current-frame-note">Current frame · pixel recall</p>
+          <div class="current-recall"><div class="model-a"><span>A <span id="score-label-a">Model A</span></span><strong id="recall-a">—</strong></div><div class="model-b"><span>B <span id="score-label-b">Model B</span></span><strong id="recall-b">—</strong></div></div>
+          <svg class="recall-chart" id="recall-chart" viewBox="0 0 360 220" role="img" aria-label="Per-frame recall for both selected models"></svg>
+          <div class="plot-legend"><span class="model-a"><i class="color-dot" aria-hidden="true"></i> <span id="legend-label-a">—</span></span><span class="model-b"><i class="color-dot" aria-hidden="true"></i> <span id="legend-label-b">—</span></span><span>Higher is better</span></div>
+
+        </aside>
+      </div>
+      <div class="experiment-state" id="experiment-state" hidden>
+        <div class="experiment-state-panel">
+          <div class="experiment-state-heading" role="status"><span id="experiment-state-title">Loading rollouts</span></div>
+          <p id="experiment-state-description" hidden></p>
+          <div id="experiment-progress-group" hidden><progress id="experiment-progress" max="4" value="0" aria-label="Experiment assets ready"></progress><p id="experiment-progress-description">Sampling a paired trajectory…</p></div>
+          <button id="experiment-state-action" type="button" hidden>Try again</button>
+        </div>
+      </div>
+      </div>
+      <p class="metric-definition" id="metric-definition">Robot recall is the percentage of ground-truth robot pixels reproduced within the evaluator's RGB-error threshold. Higher is better.</p>
+      <div class="experiment-setup">
+        <div class="configuration">
+          <form class="experiment-controls" id="experiment-form">
+            <label class="model-field model-a"><span><i class="color-dot" aria-hidden="true"></i> World Model Training Distribution A</span><select id="model-a" aria-label="World Model Training Distribution A" disabled></select></label>
+            <span class="versus" aria-hidden="true">vs.</span>
+            <label class="model-field model-b"><span><i class="color-dot" aria-hidden="true"></i> World Model Training Distribution B</span><select id="model-b" aria-label="World Model Training Distribution B" disabled></select></label>
+            <div class="run-field"><button class="run-button" id="run" type="submit" disabled><span aria-hidden="true">⚄</span> <span id="run-label">Run Rollouts</span> <span aria-hidden="true">↗</span></button></div>
+          </form>
+          <div class="distribution-row">
+            <span class="control-label">Learner Policy Distribution:</span>
+            <div class="distribution-tabs" id="distributions" role="group" aria-label="Evaluation distribution"></div>
+            <p class="distribution-description" id="distribution-description" aria-live="polite"></p>
+          </div>
+        </div>
+        <section class="leaderboard" id="leaderboard" aria-labelledby="leaderboard-title">
+          <h4 id="leaderboard-title">Your experiments so far</h4>
+          <p class="leaderboard-description" id="leaderboard-description"></p>
+          <div id="leaderboard-rows" aria-live="polite"></div>
+          <p class="leaderboard-note" id="leaderboard-note" hidden>Sampled windows, not the full evaluation.</p>
+          <a class="inline-experiment" href="#notebook">View your experiments</a>
+        </section>
+      </div>
+      <p class="error-message" id="error" role="alert" hidden></p>
+      <details class="experiment-details"><summary>How this experiment works <span aria-hidden="true">+</span></summary><div><p>Run Rollouts samples precomputed results, not live training or inference. The two models receive the same recorded actions and start from the same ground-truth history. We sample a shared evaluation window and a recorded seed-1 prediction for each model. Playback loops; only a completed experiment adds a result to your notebook.</p><p>Pixel recall measures the percentage of ground-truth robot or object pixels reproduced within a mean absolute RGB error of 0.098. Both takes the lower robot/object recall at each frame where both are valid. The large numbers show the current frame; the curves show the window; your notebook averages valid frames. This acts as a proxy for task relevant controllability and fidelity.</p></div></details>
+    </section>
 
     <section class="notebook" id="notebook" aria-labelledby="notebook-title">
       <div class="section-heading"><div><h2 id="notebook-title">Your experiments</h2></div><div class="notebook-actions"><button id="reset" class="text-button">Reset</button></div></div>
@@ -286,7 +288,8 @@
     </section>
 
     <section class="citation" id="bibtex" aria-labelledby="citation-title">
-      <h2 id="citation-title">Citation</h2>
+      <div class="citation-heading"><h2 id="citation-title">Citation</h2><button id="copy-bibtex" class="text-button" type="button">Copy BibTeX</button></div>
+      <p id="citation-copy-status" class="citation-copy-status" role="status" hidden></p>
       <pre id="bibtex-code"><code>@inproceedings{bateman2026aim,
   title = {Training Controllable World Models via Action Influence Maximization},
   author = {Bateman, Samuel M. and Yin, Tenny and Zheng, Chongyi and Huang, Lei

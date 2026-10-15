@@ -10,6 +10,7 @@ import {
 import {datasetInfo, METRICS, modelInfo, QUESTIONS} from './presentation.mjs';
 import {renderPreferenceFigure} from './preference-figure.mjs';
 import {renderAlgorithmWalkthrough} from './algorithm-walkthrough.mjs';
+import {loadCaseInputs, renderActionInput} from './action-inputs.mjs';
 
 const $ = (id) => document.getElementById(id);
 const videos = ['gt', 'a', 'b'].map((id) => $(`video-${id}`));
@@ -35,12 +36,11 @@ let storageAvailable = true;
 let currentFrame = -1;
 let loading = false;
 let renderingReady = false;
-let appliedModels;
 let loadingError = false;
 let loadedAssets = 0;
 let retryQuery;
 let retryCounts = false;
-let deploymentPending = true;
+let actionInputs = null;
 
 function label(text) {
   return modelInfo(text).label;
@@ -92,38 +92,25 @@ function updateRenderingState() {
   const matches = renderingReady && matchesExperiment(trial,
     Object.fromEntries(selectedQuery()));
   const state = loading ? 'loading' : loadingError ? 'error' :
-    matches ? 'ready' : 'pending';
-  // Keep the chosen action's label stable through loading and retry.
-  if (state === 'pending') {
-    deploymentPending = true;
-  } else if (state === 'ready') {
-    deploymentPending = false;
-  }
-  const actionLabel = deploymentPending ? 'Deploy Models' : 'Run Rollouts';
-  $('run-label').textContent = actionLabel;
+    matches ? 'ready' : 'invalid';
   const rendering = $('experiment-rendering');
   rendering.dataset.state = state;
   rendering.classList.toggle('is-stale', state !== 'ready');
   rendering.setAttribute('aria-busy', String(loading));
   rendering.inert = state !== 'ready';
   $('experiment-state').hidden = state === 'ready';
-  const showTrainingAnimation = state === 'pending' || state === 'loading';
   $('experiment-state-title').textContent = state === 'error' ?
-    'Experiment unavailable' : state === 'loading' ?
-      'Running inference' : 'Training models';
+    'Experiment unavailable' : state === 'invalid' ?
+      'Choose two different models' : 'Loading rollouts';
   $('experiment-state-description').hidden = state !== 'error';
   $('experiment-state-description').textContent = state === 'error' ?
     'The recorded experiment could not load. Try again.' : '';
-  document.querySelector('.experiment-spinner').hidden = !showTrainingAnimation;
-  document.querySelector('.loading-dots').hidden = !showTrainingAnimation;
   $('experiment-progress-group').hidden = !loading;
   $('experiment-progress').value = loadedAssets;
   $('experiment-progress-description').textContent = loadedAssets === 0 ?
     'Sampling a paired trajectory…' : `${loadedAssets - 1} / 3 videos ready`;
-  $('experiment-state-action').hidden = loading;
+  $('experiment-state-action').hidden = state !== 'error';
   $('experiment-state-action').disabled = $('run').disabled;
-  $('experiment-state-action').textContent = loadingError ? 'Try again' :
-    actionLabel;
   $('play').disabled = state !== 'ready';
   $('scrubber').disabled = state !== 'ready';
   if (state !== 'ready') {
@@ -131,7 +118,7 @@ function updateRenderingState() {
   }
 }
 
-function stageSelection() {
+function loadSelection() {
   describeComparison();
   loadingError = false;
   const invalid = $('model-a').value === $('model-b').value;
@@ -139,8 +126,15 @@ function stageSelection() {
   $('error').hidden = true;
   if (invalid) {
     showError(new Error('Choose two different models for a paired experiment.'));
+    updateRenderingState();
+    return;
   }
-  updateRenderingState();
+  if (renderingReady && matchesExperiment(trial,
+    Object.fromEntries(selectedQuery()))) {
+    updateRenderingState();
+    return;
+  }
+  loadExperiment(selectedQuery(), false);
 }
 
 function updateDistribution() {
@@ -230,6 +224,8 @@ function waitForVideo(video, source) {
 
 async function loadExperiment(query, shouldCount) {
   const version = ++generation;
+  actionInputs = null;
+  renderActionInput($('action-input'), null, 0);
   renderingReady = false;
   loadingError = false;
   loadedAssets = 0;
@@ -247,6 +243,15 @@ async function loadExperiment(query, shouldCount) {
     loadedAssets++;
     updateRenderingState();
     trial = next;
+    loadCaseInputs(next.dataset, next.case.id, next.case.valid_transitions)
+      .then((inputs) => {
+        if (version === generation) {
+          actionInputs = inputs;
+          renderActionInput($('action-input'), inputs, Math.max(0, currentFrame));
+        }
+      }).catch(() => {
+        // Input metadata must not prevent the recorded videos from playing.
+      });
     countExperiment = shouldCount;
     completed = notebook.some((row) => row.id === trial.id);
     currentFrame = -1;
@@ -256,8 +261,10 @@ async function loadExperiment(query, shouldCount) {
     $('play').disabled = true;
     for (const [index, name] of ['a', 'b'].entries()) {
       const model = trial.models[index];
-      $(`label-${name}`).textContent = label(model.label);
-      $(`score-label-${name}`).textContent = label(model.label);
+      const modelLabel = label(model.label);
+      $(`label-${name}`).textContent = modelLabel;
+      $(`score-label-${name}`).textContent = modelLabel;
+      $(`legend-label-${name}`).textContent = modelLabel;
       $(`seed-${name}`).textContent = 'Prediction';
       $(`note-${name}`).textContent = modelInfo(model.label).description;
     }
@@ -273,7 +280,6 @@ async function loadExperiment(query, shouldCount) {
       return;
     }
     renderingReady = true;
-    appliedModels = {a: trial.models[0].id, b: trial.models[1].id};
     videos.forEach((video) => {
       video.playbackRate = Number($('speed').value);
     });
@@ -370,6 +376,7 @@ function renderFrame(frame) {
   $('frame-label').textContent = `${String(frame + 1).padStart(2, '0')} / ${
     trial.case.valid_transitions}`;
   renderChart(frame);
+  renderActionInput($('action-input'), actionInputs, frame);
 }
 
 
@@ -557,8 +564,6 @@ $('experiment-form').addEventListener('submit', (event) => {
 $('experiment-state-action').addEventListener('click', () => {
   if (loadingError && !loading) {
     loadExperiment(retryQuery, retryCounts);
-  } else {
-    $('experiment-form').requestSubmit();
   }
 });
 
@@ -593,23 +598,26 @@ for (const button of document.querySelectorAll('.mobile-model-tabs button')) {
 for (const button of document.querySelectorAll('[data-preset]')) {
   button.addEventListener('click', () => {
     setPreset(button.dataset.preset);
-    stageSelection();
+    loadSelection();
   });
 }
 
 for (const link of document.querySelectorAll('[data-story-preset]')) {
   link.addEventListener('click', () => {
+    if (loading) {
+      return;
+    }
     setPreset(link.dataset.storyPreset);
     if (link.dataset.storyPreset === 'collection') {
       dataset = catalog.datasets.find((row) => row.label === 'BC failures').id;
       updateDistribution();
     }
-    stageSelection();
+    loadSelection();
   });
 }
 
 for (const select of [$('model-a'), $('model-b')]) {
-  select.addEventListener('change', stageSelection);
+  select.addEventListener('change', loadSelection);
 }
 
 $('reset').addEventListener('click', () => {
@@ -660,17 +668,22 @@ async function initialize() {
         }
         dataset = row.id;
         updateDistribution();
-        loadExperiment(new URLSearchParams({
-          dataset,
-          ...(appliedModels || {
-            a: $('model-a').value, b: $('model-b').value,
-          }),
-        }), false);
+        loadSelection();
       });
       $('distributions').append(button);
     }
     setPreset('scale');
     const query = new URLSearchParams(location.search);
+    // The landing preview is illustrative; subsequent experiments still sample.
+    if (!['dataset', 'a', 'b', 'case'].some((key) => query.has(key))) {
+      for (const [key, value] of selectedQuery()) {
+        query.set(key, value);
+      }
+      query.set('case',
+        'sha256:930892582f7ab87701041716a061506e2c6989990fbaee8318edda0ade9e77d8');
+      query.set('seed_a', '1');
+      query.set('seed_b', '1');
+    }
     if (catalog.datasets.some((row) => row.id === query.get('dataset')) &&
       catalog.models.some((row) => row.id === query.get('a')) &&
       catalog.models.some((row) => row.id === query.get('b'))) {

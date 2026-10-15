@@ -40,7 +40,6 @@ export function intervalGeometry(score, interval) {
 export function renderPreferenceFigure(root) {
   const tabs = root.querySelector('.preference-tabs');
   const rows = root.querySelector('.preference-rows');
-  const table = root.querySelector('tbody');
   function node(tag, text, className) {
     const result = document.createElement(tag);
     if (text !== undefined) {
@@ -65,7 +64,6 @@ export function renderPreferenceFigure(root) {
       button.setAttribute('aria-pressed', String(index === distribution));
     });
     rows.replaceChildren();
-    table.replaceChildren();
     for (const row of preferenceRows(distribution)) {
       const entry = node('div', undefined, 'preference-row');
       const value = `${row.score} ± ${row.interval}`;
@@ -86,11 +84,6 @@ export function renderPreferenceFigure(root) {
       entry.append(node('span', row.label, 'preference-name'), chart,
         node('span', value, 'preference-score'));
       rows.append(entry);
-      const tr = node('tr');
-      const name = node('th', row.label);
-      name.scope = 'row';
-      tr.append(name, node('td', value));
-      table.append(tr);
     }
   }
   PREFERENCE_DATA.distributions.forEach((label, index) => {

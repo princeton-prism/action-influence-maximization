@@ -1,14 +1,21 @@
 /** Figure 1's three supplied 33-frame, 20-fps recordings share one clock. */
 const figure = document.getElementById('command-figure');
 const videos = [...figure.querySelectorAll('video')];
-videos.forEach((video) => { video.playbackRate = .5; });
+videos.forEach((video) => {
+  video.muted = true;
+  video.defaultMuted = true;
+  video.playbackRate = .5;
+});
 const master = videos[0];
 const button = figure.querySelector('.figure-play');
 const slider = figure.querySelector('input');
 let playing = false;
 let looping = false;
+let playVersion = 0;
+let unavailable = false;
 
 function pause() {
+  playVersion++;
   playing = false;
   videos.forEach((video) => video.pause());
   button.textContent = 'Play';
@@ -16,13 +23,17 @@ function pause() {
 }
 
 async function play() {
-  playing = true;
-  button.textContent = 'Pause';
-  button.setAttribute('aria-label', 'Pause Figure 1');
+  const version = ++playVersion;
   try {
     await Promise.all(videos.map((video) => video.play()));
+    if (version !== playVersion) {
+      return;
+    }
+    playing = true;
+    button.textContent = 'Pause';
+    button.setAttribute('aria-label', 'Pause Figure 1');
   } catch (error) {
-    if (error.name !== 'AbortError') {
+    if (version === playVersion) {
       pause();
     }
   }
@@ -60,29 +71,26 @@ master.addEventListener('ended', async () => {
   looping = false;
 });
 
-async function initialize() {
-  try {
-    await Promise.all(videos.map((video) => new Promise((resolve, reject) => {
-      if (video.readyState >= 2) {
-        resolve();
-        return;
-      }
-      const cleanup = () => {
-        video.removeEventListener('loadeddata', ready);
-        video.removeEventListener('error', failed);
-      };
-      const ready = () => { cleanup(); resolve(); };
-      const failed = () => { cleanup(); reject(new Error('Figure video unavailable')); };
-      video.addEventListener('loadeddata', ready, {once: true});
-      video.addEventListener('error', failed, {once: true});
-    })));
-    button.disabled = false;
-    slider.disabled = false;
-    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      await play();
-    }
-  } catch {
+function initialize() {
+  const ready = () => {
+    slider.disabled = unavailable || !videos.every((video) => video.readyState >= 1);
+  };
+  const failed = () => {
+    pause();
+    unavailable = true;
+    button.disabled = true;
+    slider.disabled = true;
     button.textContent = 'Video unavailable';
+  };
+  videos.forEach((video) => {
+    video.addEventListener('loadedmetadata', ready);
+    video.addEventListener('error', failed);
+  });
+  // Play may start loading on iOS; decoded-frame readiness cannot gate it.
+  button.disabled = false;
+  ready();
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    play();
   }
 }
 

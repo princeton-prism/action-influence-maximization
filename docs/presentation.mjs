@@ -2,41 +2,42 @@
 
 function ppoAddition(name, collection) {
   return {
-    label: `PPO expert 3K + 500 ${name}`,
+    label: `Expert Demos 3K + 500 ${name}`,
     description: `3,000 PPO expert trajectories + 500 ${collection} trajectories.`,
   };
 }
 
 // Counts refer to collection budgets, not rollout seeds or success rates.
 const MODELS = {
-  PPO1: {label: 'PPO expert 3K', description: '3,000 PPO expert trajectories (1% of the full dataset).'},
-  PPO100: {label: 'PPO expert 300K', description: '300,000 PPO expert trajectories (the full dataset).'},
+  PPO1: {label: 'Expert Demos 3K', description: '3,000 PPO expert trajectories (1% of the full dataset).'},
+  PPO100: {label: 'Expert Demos 300K', description: '300,000 PPO expert trajectories (the full dataset).'},
   Recovery1: {
-    label: 'Recovery 3K',
+    label: 'Recovery Demos 3K',
     description: '3,000 recovery trajectories (1%): expert actions mixed with random-walk actions.',
   },
   Recovery100: {
-    label: 'Recovery 300K',
+    label: 'Recovery Demos 300K',
     description: '300,000 recovery trajectories (100%): expert actions mixed with random-walk actions.',
   },
   'Recovery1 + transferred AIM500': {
-    label: 'Recovery 3K + 500 AIM (transfer)',
+    label: 'Recovery Demos 3K + 500 AIM (Transfer)',
     description: '3,000 recovery trajectories + 500 AIM trajectories reused from the PPO collection experiment.',
   },
   'PPO1 + AIM500': ppoAddition('AIM', 'AIM-collected'),
   'PPO1 + AIM500 (MI only)': ppoAddition(
-    'AIM (action information only)', 'AIM-collected, without state novelty'),
+    'AIM (Action Information Only)', 'AIM-collected, without state novelty'),
   'PPO1 + AIM500 (novelty only)': ppoAddition(
-    'AIM (novelty only)', 'AIM-collected, without action information'),
+    'AIM (Novelty Only)', 'AIM-collected, without action information'),
   'PPO1 + fixed-policy AIM500': ppoAddition(
-    'AIM (fixed collector)', 'AIM-collected with a fixed reward and policy'),
-  'PPO1 + Recovery500': ppoAddition('recovery', 'expert/random-walk recovery'),
+    'AIM (Fixed Collector)', 'AIM-collected with a fixed reward and policy'),
+  'PPO1 + Recovery500': ppoAddition(
+    'Recovery Demos', 'expert/random-walk recovery'),
   'PPO1 + ICM500': ppoAddition('ICM', 'curiosity-collected (ICM)'),
   'PPO1 + DIAYN500': ppoAddition('DIAYN', 'skill-discovery (DIAYN)'),
   'PPO1 + METRA500': ppoAddition('METRA', 'skill-discovery (METRA)'),
   'PPO1 + DADS500': ppoAddition('DADS', 'skill-discovery (DADS)'),
-  'PPO1 + Uniform Random500': ppoAddition('uniform random', 'uniform-random-action'),
-  'PPO1 + Random Walk500': ppoAddition('random walk', 'random-walk-action'),
+  'PPO1 + Uniform Random500': ppoAddition('Uniform Random', 'uniform-random-action'),
+  'PPO1 + Random Walk500': ppoAddition('Random Walk', 'random-walk-action'),
 };
 
 export function modelInfo(label) {
@@ -83,7 +84,7 @@ export const METRICS = {
 };
 
 export const QUESTIONS = {
-  scale: 'Compare PPO expert 3K + 500 AIM with PPO expert 300K. Watch which prediction follows the recorded robot actions.',
+  scale: 'Compare Expert Demos 3K + 500 AIM with Expert Demos 300K. Watch which prediction follows the recorded robot actions.',
   collection: 'Hold the 3,000-trajectory prior fixed. What changes when 500 AIM trajectories are added?',
   ablation: 'Keep the 500-trajectory budget fixed. Does state novelty help alongside action information?',
 };

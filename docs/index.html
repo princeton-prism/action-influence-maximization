@@ -49,14 +49,14 @@
           <a class="inline-experiment" href="#experiment" data-story-preset="collection">Try it: compare predictions on BC failures</a>
         </div>
         <figure class="story-figure" id="command-figure">
-          <div class="figure-heading"><h3>Figure 1 · Following the commands—or the expert?</h3></div>
+          <div class="figure-heading"><h3>Figure 1 · World model predictions with different training data</h3></div>
           <div class="figure-video-grid">
             <figure><figcaption>Simulator</figcaption><video src="./static/videos/hand-motion-03-simulator-gt-rollout.mp4" poster="./static/images/figures/hand-motion-03-simulator-gt-rollout.png" width="256" height="256" muted playsinline preload="metadata" aria-label="Figure 1 simulator ground truth"></video></figure>
-            <figure><figcaption>Expert Demos 3K</figcaption><video src="./static/videos/hand-motion-03-ppo1-rollout.mp4" poster="./static/images/figures/hand-motion-03-ppo1-rollout.png" width="256" height="256" muted playsinline preload="metadata" aria-label="Figure 1 Expert Demos 3K prediction"></video></figure>
-            <figure><figcaption>Recovery Demos 3K + 500 AIM (Transfer)</figcaption><video src="./static/videos/hand-motion-03-recovery1-transferred-aim500-rollout.mp4" poster="./static/images/figures/hand-motion-03-recovery1-transferred-aim500-rollout.png" width="256" height="256" muted playsinline preload="metadata" aria-label="Figure 1 Recovery Demos 3K plus transferred AIM prediction"></video></figure>
+            <figure><figcaption>3K Expert Demos</figcaption><video src="./static/videos/hand-motion-03-ppo1-rollout.mp4" poster="./static/images/figures/hand-motion-03-ppo1-rollout.png" width="256" height="256" muted playsinline preload="metadata" aria-label="Figure 1 world model prediction trained on 3K Expert Demos"></video></figure>
+            <figure><figcaption>3K Recovery Demos + 500 AIM</figcaption><video src="./static/videos/hand-motion-03-recovery1-transferred-aim500-rollout.mp4" poster="./static/images/figures/hand-motion-03-recovery1-transferred-aim500-rollout.png" width="256" height="256" muted playsinline preload="metadata" aria-label="Figure 1 world model prediction trained on 3K Recovery Demos plus 500 AIM"></video></figure>
           </div>
           <div class="figure-timeline"><button class="figure-play" type="button" aria-label="Play Figure 1">Play</button><input type="range" min="0" max="32" value="0" step="1" aria-label="Figure 1 frame" disabled></div>
-          <figcaption>The same recorded commands, shown in simulation and two world-model predictions. This selected example compares different starting datasets as well as the AIM addition; it is not a matched-prior ablation. The AIM trajectories were reused from PPO-prior collection.</figcaption>
+          <figcaption>The same recorded commands, shown in simulation and two world-model predictions. Training datasets: 3,000 expert demos versus 3,000 recovery demos plus 500 AIM trajectories. This selected example compares different starting datasets as well as the AIM addition; it is not a matched-prior ablation. The AIM trajectories were reused from PPO-prior collection.</figcaption>
         </figure>
         <div class="story-copy story-followup influence-discussion">
           <figure class="story-figure influence-chart" id="influence-figure">

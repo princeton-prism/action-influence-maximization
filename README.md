@@ -1,7 +1,5 @@
 # Training Controllable World Models via Action Influence Maximization
 
-### Sample Efficient Data-Driven Exploration
-
 [📄 Paper](https://arxiv.org/abs/2610.27387) · [🌐 Website](https://princeton-prism.github.io/action-influence-maximization/) · 🤖 **CoRL 2026**
 
 <img width="540" height="405" alt="Action Influence Maximization demo" src="https://github.com/user-attachments/assets/3780b38d-917d-4722-ab1a-180731114119" />
